@@ -1,0 +1,18 @@
+node_modules/        # Dependencies
+.env                 # Environment variables (sensitive data!)
+.DS_Store            # macOS folder metadata
+npm-debug.log*       # npm debug logs
+yarn-debug.log*      # Yarn debug logs
+yarn-error.log*      # Yarn error logs
+.pnpm-debug.log*     # pnpm debug logs
+.pnpm-trace.log*     # pnpm trace logs
+dist/                # Build output (if you're using a build process)
+build/               # Build output (if you're using a build process)
+coverage/            # Test coverage reports
+.idea/               # IntelliJ IDEA project files
+.vscode/             # VS Code project files
+*.log                # Generic log files
+# Optional, but often useful:
+.DS_Store            # macOS folder metadata
+Thumbs.db            # Windows thumbnail cache
+.history             # Bash history
