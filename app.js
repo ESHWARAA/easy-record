@@ -1,6 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const connectDB = require('./config/db');
+const cors = require('cors');
 require('dotenv').config(); // Load environment variables
 const dailySummariesRouter = require('./routes/dailySummaries');
 const incomeCategoriesRouter = require('./routes/incomeCategories');
@@ -13,6 +13,8 @@ connectDB();
 //tB9E0V36OvEhTogj
 
 app.use(express.json());
+app.use(cors());
+
 app.use('/api/daily-summaries', dailySummariesRouter);
 app.use('/api/income-categories', incomeCategoriesRouter);
 app.use('/api/expense-categories', expenseCategoriesRouter);
