@@ -32,3 +32,28 @@ exports.createDailySummary = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+exports.getDailySummariesByPagination = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const total = await DailySummary.countDocuments();
+    const summaries = await DailySummary.find()
+      .sort({ date: -1 }) // Sort by date in descending order
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      summaries,
+    });
+  } catch (error) {
+    console.error('Error fetching daily summaries:', error);
+    res.status(500).json({ error: 'Error fetching daily summaries' });
+  }
+};
