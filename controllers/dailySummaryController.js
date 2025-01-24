@@ -66,18 +66,22 @@ exports.getDailySummariesByDateRange = async (req, res) => {
     const from = new Date(fromDate);
     const to = toDate ? new Date(toDate) : new Date();
 
-    const dailySummaries = await DailySummary.aggregate([
+    // Validate dates
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return res.status(400).json({ message: 'Invalid date range provided.' });
+    }
+
+    // Income Aggregation Query
+    const incomeSummaries = await DailySummary.aggregate([
       {
         $match: {
           date: {
             $gte: from,
-            $lte: to,
+            $lt: to,
           },
         },
       },
-      {
-        $unwind: '$incomeEntries',
-      },
+      { $unwind: '$incomeEntries' },
       {
         $group: {
           _id: '$incomeEntries.category',
@@ -86,69 +90,74 @@ exports.getDailySummariesByDateRange = async (req, res) => {
       },
       {
         $lookup: {
-          from: 'categories',
+          from: 'incomecategories', // Match this to your actual collection name
           localField: '_id',
           foreignField: '_id',
-          as: 'category',
+          as: 'categoryDetails',
         },
       },
       {
-        $unwind: '$category',
+        $unwind: {
+          path: '$categoryDetails',
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $project: {
+          category: '$categoryDetails.name', // Map the name field from IncomeCategory
+          totalIncome: { $round: ['$totalIncome', 2] },
           _id: 0,
-          category: '$category.name',
-          totalIncome: 1,
-        },
-      },
-      {
-        $unionWith: {
-          coll: 'dailySummaries',
-          pipeline: [
-            {
-              $match: {
-                date: {
-                  $gte: from,
-                  $lte: to,
-                },
-              },
-            },
-            {
-              $unwind: '$expenseEntries',
-            },
-            {
-              $group: {
-                _id: '$expenseEntries.category',
-                totalExpense: { $sum: '$expenseEntries.amount' },
-              },
-            },
-            {
-              $lookup: {
-                from: 'categories',
-                localField: '_id',
-                foreignField: '_id',
-                as: 'category',
-              },
-            },
-            {
-              $unwind: '$category',
-            },
-            {
-              $project: {
-                _id: 0,
-                category: '$category.name',
-                totalExpense: 1,
-              },
-            },
-          ],
         },
       },
     ]);
 
-    res.json(dailySummaries);
+    // Expense Aggregation Query
+    const expenseSummaries = await DailySummary.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: from,
+            $lt: to,
+          },
+        },
+      },
+      { $unwind: '$expenseEntries' },
+      {
+        $group: {
+          _id: '$expenseEntries.category',
+          totalExpense: { $sum: '$expenseEntries.amount' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'expensecategories', // Match this to your actual collection name
+          localField: '_id',
+          foreignField: '_id',
+          as: 'categoryDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          category: '$categoryDetails.name', // Map the name field from ExpenseCategory
+          totalExpense: { $round: ['$totalExpense', 2] },
+          _id: 0,
+        },
+      },
+    ]);
+
+    // Combine Results
+    res.json({
+      incomeSummaries,
+      expenseSummaries,
+    });
   } catch (err) {
     logger.error(`Error fetching daily summaries: ${err.message}`);
     res.status(500).json({ message: err.message });
   }
-}
+};
