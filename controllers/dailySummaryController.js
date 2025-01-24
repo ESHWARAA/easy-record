@@ -11,16 +11,19 @@ exports.getAllDailySummaries = async (req, res) => {
 };
 
 exports.getDailySummaryByDate = async (req, res) => {
-    try {
-        const date = new Date(req.params.date);
-        const dailySummary = await DailySummary.findOne({ date }).populate('incomeEntries.category expenseEntries.category');
-        if (!dailySummary) {
-            return res.status(404).json({ message: 'Daily summary not found' });
-        }
-        res.json(dailySummary);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+  try {
+    const date = new Date(req.params.date);
+    if (isNaN(date.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
     }
+    const dailySummary = await DailySummary.findOne({ date }).populate('incomeEntries.category expenseEntries.category');
+    if (!dailySummary) {
+      return res.status(404).json({ message: 'Daily summary not found' });
+    }
+    res.json(dailySummary);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 
