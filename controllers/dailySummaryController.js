@@ -1,4 +1,5 @@
 const DailySummary = require('../models/dailySummary');
+const logger = require('../config/logger');
 
 exports.getAllDailySummaries = async (req, res) => {
   try {
@@ -57,3 +58,97 @@ exports.getDailySummariesByPagination = async (req, res) => {
     res.status(500).json({ error: 'Error fetching daily summaries' });
   }
 };
+
+exports.getDailySummariesByDateRange = async (req, res) => {
+  logger.info(`Fetching daily summaries by date range.`);
+  try {
+    const { fromDate, toDate } = req.query;
+    const from = new Date(fromDate);
+    const to = toDate ? new Date(toDate) : new Date();
+
+    const dailySummaries = await DailySummary.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: from,
+            $lte: to,
+          },
+        },
+      },
+      {
+        $unwind: '$incomeEntries',
+      },
+      {
+        $group: {
+          _id: '$incomeEntries.category',
+          totalIncome: { $sum: '$incomeEntries.amount' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'category',
+        },
+      },
+      {
+        $unwind: '$category',
+      },
+      {
+        $project: {
+          _id: 0,
+          category: '$category.name',
+          totalIncome: 1,
+        },
+      },
+      {
+        $unionWith: {
+          coll: 'dailySummaries',
+          pipeline: [
+            {
+              $match: {
+                date: {
+                  $gte: from,
+                  $lte: to,
+                },
+              },
+            },
+            {
+              $unwind: '$expenseEntries',
+            },
+            {
+              $group: {
+                _id: '$expenseEntries.category',
+                totalExpense: { $sum: '$expenseEntries.amount' },
+              },
+            },
+            {
+              $lookup: {
+                from: 'categories',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'category',
+              },
+            },
+            {
+              $unwind: '$category',
+            },
+            {
+              $project: {
+                _id: 0,
+                category: '$category.name',
+                totalExpense: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    res.json(dailySummaries);
+  } catch (err) {
+    logger.error(`Error fetching daily summaries: ${err.message}`);
+    res.status(500).json({ message: err.message });
+  }
+}
