@@ -7,6 +7,7 @@ router.get('/date/:date', dailySummaryController.getDailySummaryByDate);
 router.get('/pagination', dailySummaryController.getDailySummariesByPagination);
 router.get('/range', dailySummaryController.getDailySummariesByDateRange);
 router.post('/', dailySummaryController.createDailySummary);
+router.get('/category/range', dailySummaryController.getCategoryDataByRange);
 
 
 module.exports = router;
