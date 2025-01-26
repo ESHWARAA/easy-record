@@ -6,6 +6,7 @@ const dailySummariesRouter = require('./routes/dailySummaries');
 const incomeCategoriesRouter = require('./routes/incomeCategories');
 const expenseCategoriesRouter = require('./routes/expenseCategories');
 const userRouter = require('./routes/user');
+const formEntryRouter = require('./routes/formEntry');
 const app = express();
 
 
@@ -19,5 +20,6 @@ app.use('/api/daily-summaries', dailySummariesRouter);
 app.use('/api/income-categories', incomeCategoriesRouter);
 app.use('/api/expense-categories', expenseCategoriesRouter);
 app.use('/api/user', userRouter);
+app.use('/api/form-entry', formEntryRouter);
 
 module.exports = app;
