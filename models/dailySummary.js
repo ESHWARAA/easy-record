@@ -3,6 +3,7 @@ const { ObjectId } = mongoose.Schema.Types;
 
 const dailySummarySchema = new mongoose.Schema({
   date: { type: Date, required: true, unique: true },
+  day: { type: String, required: true },
   totalIncome: { type: Number, default: 0 },
   totalExpenses: { type: Number, default: 0 },
   incomeEntries: [
@@ -15,9 +16,10 @@ const dailySummarySchema = new mongoose.Schema({
     {
       category: { type: ObjectId, ref: 'ExpenseCategory' },
       amount: { type: Number, required: true },
-      description: { type: String }
+      type: { type: String, required: true }
     }
-  ]
+  ],
+  notes: { type: [String], default: [] }
 });
 
 module.exports = mongoose.model('DailySummary', dailySummarySchema);
