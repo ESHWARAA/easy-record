@@ -30,10 +30,25 @@ exports.getDailySummaryByDate = async (req, res) => {
 
 
 exports.createDailySummary = async (req, res) => {
-  const dailySummary = new DailySummary(req.body);
+  const { date, incomeEntries, expenseEntries, notes, day, totalIncome, totalExpenses } = req.body;
+
   try {
-    const newDailySummary = await dailySummary.save();
-    res.status(201).json(newDailySummary);
+    const existingSummary = await DailySummary.findOneAndUpdate(
+      { date: new Date(date) },
+      {
+        $set: {
+          incomeEntries,
+          expenseEntries,
+          notes,
+          day,
+          totalIncome,
+          totalExpenses
+        }
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(200).json(existingSummary);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
