@@ -262,55 +262,57 @@ exports.getCategoryDataByRange = async (req, res) => {
 
     // Merge results and return
     const results = {};
+    let totalSum = 0;
 
     incomeData.forEach((entry) => {
       const dateKey = entry.date.toISOString().split('T')[0];
       results[dateKey] = {
         date: entry.date,
-        amount: entry.totalAmount || 0
+        amount: entry.totalAmount || 0,
       };
+      totalSum += entry.totalAmount;
     });
 
     expenseData.forEach((entry) => {
       const dateKey = entry.date.toISOString().split('T')[0];
       if (results[dateKey]) {
-        results[dateKey].totalExpenses = entry.totalAmount || 0;
+        results[dateKey].amount += entry.totalAmount || 0;
       } else {
         results[dateKey] = {
           date: entry.date,
           amount: entry.totalAmount || 0,
         };
       }
+      totalSum += entry.totalAmount;
     });
 
-    // const response = Object.values(results).sort(
-    //   (a, b) => new Date(a.date) - new Date(b.date)
-    // );
+    const combinedResults = Object.values(results);
 
-   // Convert combinedResults to an array
-   const combinedResults = Object.values(results);
+    // Generate all dates in the range
+    const dateRange = [];
+    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+      dateRange.push(new Date(d));
+    }
 
-   // Generate all dates in the range
-   const dateRange = [];
-   for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-     dateRange.push(new Date(d));
-   }
+    // Merge the existing data with the full date range
+    const response = dateRange.map((date) => {
+      const existingEntry = combinedResults.find(
+        (entry) =>
+          entry.date.toISOString().split('T')[0] ===
+          date.toISOString().split('T')[0]
+      );
+      return {
+        date: date.toISOString().split('T')[0],
+        amount: existingEntry ? existingEntry.amount : 0,
+      };
+    });
 
-   // Merge the existing data with the full date range
-   const response = dateRange.map((date) => {
-     const existingEntry = combinedResults.find(
-       (entry) =>
-         entry.date.toISOString().split('T')[0] ===
-         date.toISOString().split('T')[0]
-     );
-     return {
-       date: date.toISOString().split('T')[0],
-       amount: existingEntry ? existingEntry.amount : 0,
-     };
-   });
+    // Add overall data summary
+    const overallData = {
+      totalAmount: totalSum,
+    };
 
-
-    res.json(response);
+    res.json({ response, overallData });
   } catch (err) {
     console.error(`Error fetching category data: ${err.message}`);
     res.status(500).json({ message: 'Internal server error' });
